@@ -1,5 +1,6 @@
 package br.com.dmopen.customer.model;
 
+import br.com.dmopen.customer.CustomerStatusEnum;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -21,7 +22,7 @@ public class Customer {
 
     private String name;
 
-    private String status;
+    private CustomerStatusEnum status;
 
     @CreatedDate
     private LocalDateTime created;
