@@ -1,11 +1,13 @@
 package br.com.dmopen.customer.controller;
 
-import br.com.dmopen.customer.model.Customer;
+import br.com.dmopen.customer.controller.mapper.CustomerMapper;
+import br.com.dmopen.customer.controller.request.CustomerRequest;
+import br.com.dmopen.customer.controller.response.CustomerResponse;
 import br.com.dmopen.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
@@ -17,27 +19,32 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
-    @GetMapping
-    public Flux<Customer> listAll(){
-        return this.customerService.findAll();
-    }
+    private final CustomerMapper customerMapper;
 
     @PostMapping
-    public Mono<Customer> create(@RequestBody Customer customer){
-        return this.customerService.create(customer);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<CustomerResponse> create(@RequestBody CustomerRequest customer) {
+        return Mono.just(customer)
+                .map(customerMapper::toModel)
+                .flatMap(customerService::create)
+                .map(customerMapper::todResponse);
     }
 
 
     @GetMapping("/{customerUuid}")
-    public Mono<Customer> findById(
-            @PathVariable String customerUuid){
-        return this.customerService.findByUuid(customerUuid);
+    public Mono<CustomerResponse> findById(@PathVariable String customerUuid) {
+        return Mono.just(customerUuid)
+                .flatMap(customerService::findByUuid)
+                .map(customerMapper::todResponse);
     }
 
-    @PostMapping("/{customerUuid}")
-    public Mono<Customer> update(
+    @PutMapping("/{customerUuid}")
+    public Mono<CustomerResponse> update(
             @PathVariable String customerUuid,
-            @RequestBody Customer customer){
-        return this.customerService.update(customerUuid, customer);
+            @RequestBody CustomerRequest customer) {
+        return Mono.zip(Mono.just(customerUuid), Mono.just(customerMapper.toModel(customer)))
+                .flatMap(tuple -> customerService.update(tuple.getT1(), tuple.getT2())) //TODO Improve this
+                .map(customerMapper::todResponse);
     }
+
 }
